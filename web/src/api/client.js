@@ -10,13 +10,11 @@ export function registerUnauthorizedHandler(handler) {
 }
 
 export async function apiRequest(path, options = {}) {
-  const token = localStorage.getItem('token')
   const headers = new Headers(options.headers || {})
-  if (token) headers.set('Authorization', `Bearer ${token}`)
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
 
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
-  if (response.status === 401 && token && !path.startsWith('/api/auth/login') && !path.startsWith('/api/auth/signup')) {
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers, credentials: 'include' })
+  if (response.status === 401 && !path.startsWith('/api/auth/login') && !path.startsWith('/api/auth/signup')) {
     onUnauthorized()
   }
   const data = response.status === 204 ? null : await response.json().catch(() => null)

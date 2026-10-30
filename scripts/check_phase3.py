@@ -35,8 +35,8 @@ def run_api_check(email: str) -> None:
         )
         assert signup.status_code == 201, signup.text
         payload = signup.json()
-        assert "token" in payload and "password_hash" not in payload["user"]
-        token = payload["token"]
+        assert "token" not in payload and "password_hash" not in payload
+        token = signup.cookies["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
         me = client.get("/api/auth/me", headers=headers)
@@ -49,7 +49,7 @@ def run_api_check(email: str) -> None:
         )
         assert login.status_code == 200, login.text
         refreshed = client.get(
-            "/api/auth/me", headers={"Authorization": f"Bearer {login.json()['token']}"}
+            "/api/auth/me", headers={"Authorization": f"Bearer {login.cookies['access_token']}"}
         )
         assert refreshed.status_code == 200
 

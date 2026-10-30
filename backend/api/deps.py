@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,16 +16,18 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    if credentials is None:
+    token = request.cookies.get("access_token") or (credentials.credentials if credentials else None)
+    if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user_id = decode_token(credentials.credentials)
+    user_id = decode_token(token)
     user = await db.get(User, user_id)
     if user is None:
         raise HTTPException(

@@ -6,12 +6,12 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate()
-  const [token, setToken] = useState(() => localStorage.getItem('token'))
+  const [token, setToken] = useState(false)
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(Boolean(localStorage.getItem('token')))
+  const [loading, setLoading] = useState(true)
 
   const logout = useCallback((redirect = true) => {
-    localStorage.removeItem('token')
+    apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => {})
     setToken(null)
     setUser(null)
     setLoading(false)
@@ -21,20 +21,18 @@ export function AuthProvider({ children }) {
   useEffect(() => registerUnauthorizedHandler(() => logout(true)), [logout])
 
   useEffect(() => {
-    if (!token) return
     let active = true
     apiRequest('/api/auth/me')
       .then((currentUser) => { if (active) setUser(currentUser) })
       .catch(() => { if (active) logout(false) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [token, logout])
+  }, [logout])
 
-  const acceptSession = useCallback((session) => {
-    localStorage.setItem('token', session.token)
-    setToken(session.token)
-    setUser(null)
-    setLoading(true)
+  const acceptSession = useCallback((userData) => {
+    setToken(true)
+    setUser(userData)
+    setLoading(false)
   }, [])
 
   const value = useMemo(() => ({ token, user, loading, acceptSession, logout }), [token, user, loading, acceptSession, logout])

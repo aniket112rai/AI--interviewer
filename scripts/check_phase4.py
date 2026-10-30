@@ -119,7 +119,7 @@ def run_api_check() -> dict:
             json={"email": TEST_EMAIL, "password": TEST_PASSWORD, "name": "Phase 4 Check"},
         )
         assert signup.status_code == 201, signup.text
-        headers = {"Authorization": f"Bearer {signup.json()['token']}"}
+        headers = {"Authorization": f"Bearer {signup.cookies['access_token']}"}
 
         pdf_upload = client.post(
             "/api/resumes",
@@ -165,7 +165,7 @@ def run_api_check() -> dict:
             json={"email": f"phase4-other-{uuid4().hex}@example.invalid", "password": TEST_PASSWORD},
         )
         assert stranger_signup.status_code == 201
-        stranger_headers = {"Authorization": f"Bearer {stranger_signup.json()['token']}"}
+        stranger_headers = {"Authorization": f"Bearer {stranger_signup.cookies['access_token']}"}
         assert client.get(f"/api/resumes/{pdf_id}", headers=stranger_headers).status_code == 404
 
         snapshot = pdf_result.json()["profile"]
